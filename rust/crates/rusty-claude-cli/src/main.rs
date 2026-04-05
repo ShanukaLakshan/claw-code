@@ -341,8 +341,7 @@ fn parse_args(args: &[String]) -> Result<CliAction, String> {
     if rest.first().map(String::as_str) == Some("--resume") {
         return parse_resume_args(&rest[1..]);
     }
-    if let Some(action) = parse_single_word_command_alias(&rest, &model, permission_mode_override)
-    {
+    if let Some(action) = parse_single_word_command_alias(&rest, &model, permission_mode_override) {
         return action;
     }
 
@@ -1751,37 +1750,38 @@ impl RuntimeMcpState {
             .into_iter()
             .filter(|server_name| !failed_server_names.contains(server_name))
             .collect::<Vec<_>>();
-        let failed_servers = discovery
-            .failed_servers
-            .iter()
-            .map(|failure| runtime::McpFailedServer {
-                server_name: failure.server_name.clone(),
-                phase: runtime::McpLifecyclePhase::ToolDiscovery,
-                error: runtime::McpErrorSurface::new(
-                    runtime::McpLifecyclePhase::ToolDiscovery,
-                    Some(failure.server_name.clone()),
-                    failure.error.clone(),
-                    std::collections::BTreeMap::new(),
-                    true,
-                ),
-            })
-            .chain(discovery.unsupported_servers.iter().map(|server| {
-                runtime::McpFailedServer {
-                    server_name: server.server_name.clone(),
-                    phase: runtime::McpLifecyclePhase::ServerRegistration,
+        let failed_servers =
+            discovery
+                .failed_servers
+                .iter()
+                .map(|failure| runtime::McpFailedServer {
+                    server_name: failure.server_name.clone(),
+                    phase: runtime::McpLifecyclePhase::ToolDiscovery,
                     error: runtime::McpErrorSurface::new(
-                        runtime::McpLifecyclePhase::ServerRegistration,
-                        Some(server.server_name.clone()),
-                        server.reason.clone(),
-                        std::collections::BTreeMap::from([(
-                            "transport".to_string(),
-                            format!("{:?}", server.transport).to_ascii_lowercase(),
-                        )]),
-                        false,
+                        runtime::McpLifecyclePhase::ToolDiscovery,
+                        Some(failure.server_name.clone()),
+                        failure.error.clone(),
+                        std::collections::BTreeMap::new(),
+                        true,
                     ),
-                }
-            }))
-            .collect::<Vec<_>>();
+                })
+                .chain(discovery.unsupported_servers.iter().map(|server| {
+                    runtime::McpFailedServer {
+                        server_name: server.server_name.clone(),
+                        phase: runtime::McpLifecyclePhase::ServerRegistration,
+                        error: runtime::McpErrorSurface::new(
+                            runtime::McpLifecyclePhase::ServerRegistration,
+                            Some(server.server_name.clone()),
+                            server.reason.clone(),
+                            std::collections::BTreeMap::from([(
+                                "transport".to_string(),
+                                format!("{:?}", server.transport).to_ascii_lowercase(),
+                            )]),
+                            false,
+                        ),
+                    }
+                }))
+                .collect::<Vec<_>>();
         let degraded_report = (!failed_servers.is_empty()).then(|| {
             runtime::McpDegradedReport::new(
                 working_servers,
@@ -7509,8 +7509,12 @@ UU conflicted.rs",
         let runtime_config = loader.load().expect("runtime config should load");
         let state = build_runtime_plugin_state_with_loader(&workspace, &loader, &runtime_config)
             .expect("runtime plugin state should load");
-        let mut executor =
-            CliToolExecutor::new(None, false, state.tool_registry.clone(), state.mcp_state.clone());
+        let mut executor = CliToolExecutor::new(
+            None,
+            false,
+            state.tool_registry.clone(),
+            state.mcp_state.clone(),
+        );
 
         let search_output = executor
             .execute("ToolSearch", r#"{"query":"remote","max_results":5}"#)
